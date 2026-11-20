@@ -323,6 +323,7 @@ async function buscarMidiasOnline(licaoId) {
     return await resposta.json();
 }
 
+
 async function exibirMidiasDaLicao(licaoId, recipiente) {
     try {
         const midias = await buscarMidiasOnline(licaoId);
@@ -330,66 +331,42 @@ async function exibirMidiasDaLicao(licaoId, recipiente) {
         recipiente.replaceChildren();
 
         midias.forEach(function(midia) {
-            const imagem = document.createElement("img");
+            if (!midia.url) return;
 
-            imagem.src = midia.url;
-            imagem.alt = midia.nome || "Imagem da lição";
-            imagem.loading = "lazy";
-            imagem.style.maxWidth = "100%";
-            imagem.style.borderRadius = "10px";
-            imagem.style.marginTop = "12px";
+            const tipo = midia.tipo || "";
+            const video = tipo.startsWith("video/") ||
+                /\.(mp4|webm|ogg)(\?|$)/i.test(midia.url);
 
-            imagem.onerror = function() {
-                console.error("Erro ao carregar imagem:", midia.url);
+            const elemento = document.createElement(
+                video ? "video" : "img"
+            );
+
+            elemento.src = midia.url;
+            elemento.style.maxWidth = "100%";
+            elemento.style.borderRadius = "10px";
+            elemento.style.marginTop = "12px";
+
+            if (video) {
+                elemento.controls = true;
+            } else {
+                elemento.alt = midia.nome || "Imagem da lição";
+                elemento.loading = "lazy";
+            }
+
+            elemento.onerror = function() {
+                console.error("Erro ao carregar mídia:", midia.url);
             };
 
-            recipiente.appendChild(imagem);
+            recipiente.appendChild(elemento);
         });
 
     } catch (erro) {
         console.error("Erro ao carregar mídias:", erro);
         recipiente.textContent =
-            "Não foi possível carregar as imagens desta lição.";
+            "Não foi possível carregar as mídias desta lição.";
     }
 }
 
-async function exibirMidiasDaLicao(licaoId, recipiente) {
-    try {
-        const midias = await buscarMidiasDaLicao(licaoId);
-
-        midias.forEach(function(midia) {
-            const url = URL.createObjectURL(midia.arquivo);
-            let elemento;
-
-            if (midia.tipo.startsWith("image/")) {
-                elemento = document.createElement("img");
-                elemento.alt = midia.nome;
-                elemento.style.maxWidth = "100%";
-                elemento.style.borderRadius = "10px";
-                elemento.style.marginTop = "12px";
-            } else if (midia.tipo.startsWith("video/")) {
-                elemento = document.createElement("video");
-                elemento.controls = true;
-                elemento.style.maxWidth = "100%";
-                elemento.style.marginTop = "12px";
-            } else {
-                URL.revokeObjectURL(url);
-                return;
-            }
-
-            elemento.src = url;
-            elemento.addEventListener("load", function() {
-                if (elemento.tagName === "IMG") {
-                    URL.revokeObjectURL(url);
-                }
-            });
-
-            recipiente.appendChild(elemento);
-        });
-    } catch (erro) {
-        console.error("Erro ao carregar mídias:", erro);
-    }
-}
 </script>
 
 </body>
