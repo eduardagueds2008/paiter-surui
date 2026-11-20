@@ -530,7 +530,24 @@ async function selecionarLicaoPeloLink() {
     }
 }
 
-selecionarLicaoPeloLink();
+
+async function iniciarQuiz() {
+    try {
+        await selecionarLicaoPeloLink();
+
+        const parametros = new URLSearchParams(window.location.search);
+
+        if (!parametros.get("licao")) {
+            await carregarLicoesJogo();
+            await carregarPerguntasJogo();
+        }
+    } catch (erro) {
+        console.error("Erro ao iniciar quiz:", erro);
+    }
+}
+
+iniciarQuiz();
+
 
     </script>
 
