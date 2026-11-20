@@ -1,0 +1,736 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Quiz | Paiter-Suruí</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body hidden>
+
+    <header class="cabecalho">
+        <div class="logo">PAITER-SURUÍ</div>
+
+        <nav class="menu">
+            <a href="admin.html">Voltar ao Administrador</a>
+        </nav>
+    </header>
+
+    <main class="painel-admin">
+        <h1>Gerenciar Quiz</h1>
+
+        <section class="admin-card"
+                 style="max-width: 700px; margin: 30px auto;">
+
+            <h2>Cadastrar nova pergunta</h2>
+
+            <form id="form-quiz">
+
+<label for="licao-pergunta">Selecione a lição:</label>
+<select id="licao-pergunta" required>
+    <option value="">Carregando lições...</option>
+</select>
+
+                <label for="pergunta">Pergunta:</label>
+                <textarea id="pergunta" rows="3" required></textarea>
+
+<!-- Mídias opcionais da pergunta -->
+<label for="imagem-pergunta">Imagem da pergunta (opcional):</label>
+<input
+    type="file"
+    id="imagem-pergunta"
+    accept="image/png,image/jpeg,image/webp"
+>
+
+<label for="video-pergunta">Vídeo da pergunta (opcional):</label>
+<input
+    type="file"
+    id="video-pergunta"
+    accept="video/mp4,video/webm"
+>
+
+<p style="font-size: 13px; color: #555;">
+    Você pode adicionar uma imagem, um vídeo ou ambos.
+</p>
+
+                <label for="alternativa-a">Alternativa A:</label>
+                <input type="text" id="alternativa-a" required>
+
+                <label for="alternativa-b">Alternativa B:</label>
+                <input type="text" id="alternativa-b" required>
+
+                <label for="alternativa-c">Alternativa C:</label>
+                <input type="text" id="alternativa-c" required>
+
+                <label for="alternativa-d">Alternativa D:</label>
+                <input type="text" id="alternativa-d" required>
+
+                <label for="correta">Resposta correta:</label>
+                <select id="correta" required>
+                    <option value="">Selecione a resposta</option>
+                    <option value="A">Alternativa A</option>
+                    <option value="B">Alternativa B</option>
+                    <option value="C">Alternativa C</option>
+                    <option value="D">Alternativa D</option>
+                </select>
+
+                <button type="submit">Salvar Pergunta</button>
+
+            </form>
+
+            <p id="mensagem-quiz"></p>
+
+<h2>Perguntas cadastradas</h2>
+<div id="lista-perguntas"></div>
+
+        </section>
+    </main>
+
+    <footer>
+        <p>Projeto Educativo Paiter-Suruí</p>
+    </footer>
+
+<script src="js/supabase-config.js"></script>
+<script>
+    const formularioQuiz = document.getElementById("form-quiz");
+    const mensagemQuiz = document.getElementById("mensagem-quiz");
+
+async function carregarLicoesQuiz() {
+    const seletor = document.getElementById("licao-pergunta");
+
+    seletor.innerHTML = '<option value="">Carregando lições...</option>';
+
+    try {
+        const resposta = await fetch(
+            SUPABASE_URL + "/rest/v1/licoes?select=id,titulo,tema&order=titulo.asc",
+            {
+                headers: {
+                    "apikey": SUPABASE_PUBLISHABLE_KEY
+                }
+            }
+        );
+
+        if (!resposta.ok) {
+            throw new Error("Erro HTTP " + resposta.status);
+        }
+
+        const licoes = await resposta.json();
+
+        seletor.innerHTML = '<option value="">Selecione uma lição</option>';
+
+        licoes.forEach(function(licao) {
+            const opcao = document.createElement("option");
+            opcao.value = licao.id;
+            opcao.textContent = licao.titulo + " (" + licao.tema + ")";
+            seletor.appendChild(opcao);
+        });
+
+        console.log("Lições carregadas:", licoes.length);
+
+    } catch (erro) {
+        console.error("Erro ao carregar lições:", erro);
+        seletor.innerHTML =
+            '<option value="">Erro ao carregar lições</option>';
+    }
+}
+
+
+carregarLicoesQuiz().then(function() {
+    mostrarPerguntas();
+}).catch(function(erro) {
+    console.error("Erro ao carregar lições:", erro);
+});
+
+    let idPerguntaEditando = null;
+
+function obterTokenAdminQuiz() {
+    try {
+        const sessao = JSON.parse(
+            sessionStorage.getItem("paiterAdminSessao") || "null"
+        );
+
+        if (!sessao || !sessao.access_token) {
+            throw new Error("Sessão expirada. Faça login novamente.");
+        }
+
+        return sessao.access_token;
+    } catch (erro) {
+        throw new Error("Sessão administrativa inválida. Faça login novamente.");
+    }
+}
+
+async function salvarPerguntaSupabase(dadosPergunta) {
+    const token = obterTokenAdminQuiz();
+
+    const resposta = await fetch(
+        SUPABASE_URL + "/rest/v1/perguntas_quiz",
+        {
+            method: "POST",
+            headers: {
+                "apikey": SUPABASE_PUBLISHABLE_KEY,
+                "Authorization": "Bearer " + token,
+                "Content-Type": "application/json",
+                "Prefer": "return=representation"
+            },
+            body: JSON.stringify(dadosPergunta)
+        }
+    );
+
+    if (!resposta.ok) {
+        const detalhes = await resposta.text();
+        throw new Error(
+            "Erro ao salvar pergunta: " +
+            resposta.status + " - " + detalhes
+        );
+    }
+
+    const resultado = await resposta.json();
+    return resultado[0];
+}
+
+   
+formularioQuiz.addEventListener("submit", async function(evento) {
+
+        evento.preventDefault();
+
+const licaoId = document.getElementById("licao-pergunta").value;
+
+if (!licaoId) {
+    mensagemQuiz.textContent =
+        "Selecione uma lição antes de salvar a pergunta.";
+    mensagemQuiz.style.color = "red";
+    return;
+}
+
+        const pergunta = document.getElementById("pergunta").value.trim();
+        const alternativaA = document.getElementById("alternativa-a").value.trim();
+        const alternativaB = document.getElementById("alternativa-b").value.trim();
+        const alternativaC = document.getElementById("alternativa-c").value.trim();
+        const alternativaD = document.getElementById("alternativa-d").value.trim();
+        const correta = document.getElementById("correta").value;
+
+        if (!pergunta || !alternativaA || !alternativaB ||
+            !alternativaC || !alternativaD || !correta) {
+            mensagemQuiz.textContent = "Preencha todos os campos.";
+            return;
+        }
+
+
+const campoImagem = document.getElementById("imagem-pergunta");
+const campoVideo = document.getElementById("video-pergunta");
+
+const arquivoImagem = campoImagem.files[0] || null;
+const arquivoVideo = campoVideo.files[0] || null;
+
+const dadosPergunta = {
+    licao_id: Number(licaoId),
+    pergunta: pergunta,
+    alternativa_a: alternativaA,
+    alternativa_b: alternativaB,
+    alternativa_c: alternativaC,
+    alternativa_d: alternativaD,
+    correta: correta
+};
+
+const botaoSalvar = formularioQuiz.querySelector(
+    'button[type="submit"]'
+);
+
+try {
+
+if (idPerguntaEditando !== null) {
+    const perguntaAtualizada = await atualizarPerguntaSupabase(
+        idPerguntaEditando,
+        dadosPergunta
+    );
+
+    mensagemQuiz.textContent =
+        "Pergunta atualizada com sucesso no Supabase!";
+    mensagemQuiz.style.color = "#18583C";
+
+    console.log("Pergunta atualizada:", perguntaAtualizada);
+
+    idPerguntaEditando = null;
+    formularioQuiz.reset();
+
+    const botaoAtualizar = formularioQuiz.querySelector(
+        'button[type="submit"]'
+    );
+
+    if (botaoAtualizar) {
+        botaoAtualizar.textContent = "Salvar Pergunta";
+    }
+    return;
+}
+
+
+    if (botaoSalvar) {
+        botaoSalvar.disabled = true;
+    }
+
+    
+let imagemUrl = null;
+let videoUrl = null;
+
+if (arquivoImagem) {
+    imagemUrl = await enviarMidiaQuiz(
+        arquivoImagem,
+        "imagem"
+    );
+}
+
+if (arquivoVideo) {
+    videoUrl = await enviarMidiaQuiz(
+        arquivoVideo,
+        "video"
+    );
+}
+
+dadosPergunta.imagem_url = imagemUrl;
+dadosPergunta.video_url = videoUrl;
+
+const resultado = await salvarPerguntaSupabase(
+    dadosPergunta
+);
+
+
+    mensagemQuiz.textContent =
+        "Pergunta cadastrada com sucesso no Supabase!";
+    mensagemQuiz.style.color = "#18583C";
+
+    console.log("Pergunta cadastrada:", resultado);
+
+    formularioQuiz.reset();
+    idPerguntaEditando = null;
+
+} catch (erro) {
+    console.error("Erro ao salvar pergunta:", erro);
+
+    mensagemQuiz.textContent = erro.message;
+    mensagemQuiz.style.color = "red";
+
+} finally {
+    if (botaoSalvar) {
+        botaoSalvar.disabled = false;
+    }
+}
+});
+
+
+async function buscarPerguntasSupabase() {
+    const token = obterTokenAdminQuiz();
+
+    const resposta = await fetch(
+        SUPABASE_URL +
+        "/rest/v1/perguntas_quiz?select=*&order=created_at.desc",
+        {
+            method: "GET",
+            headers: {
+                "apikey": SUPABASE_PUBLISHABLE_KEY,
+                "Authorization": "Bearer " + token
+            }
+        }
+    );
+
+    if (!resposta.ok) {
+        const detalhes = await resposta.text();
+
+        throw new Error(
+            "Erro ao consultar perguntas: " +
+            resposta.status + " - " + detalhes
+        );
+    }
+
+    return await resposta.json();
+}
+
+
+async function mostrarPerguntas() {
+    const lista = document.getElementById("lista-perguntas");
+
+    lista.textContent = "Carregando perguntas...";
+
+    try {
+        const perguntas = await buscarPerguntasSupabase();
+
+        lista.innerHTML = "";
+
+        if (perguntas.length === 0) {
+            lista.textContent = "Nenhuma pergunta cadastrada.";
+            return;
+        }
+
+        const seletorLicoes = document.getElementById("licao-pergunta");
+
+        perguntas.forEach(function(item) {
+            const cartao = document.createElement("div");
+            cartao.className = "admin-card";
+            cartao.style.marginTop = "20px";
+
+            const titulo = document.createElement("h3");
+            titulo.textContent = item.pergunta;
+            cartao.appendChild(titulo);
+
+if (item.imagem_url) {
+    const imagem = document.createElement("img");
+
+    imagem.src = item.imagem_url;
+    imagem.alt = "Imagem da pergunta: " + item.pergunta;
+    imagem.loading = "lazy";
+
+    imagem.style.display = "block";
+    imagem.style.maxWidth = "100%";
+    imagem.style.maxHeight = "350px";
+    imagem.style.objectFit = "contain";
+    imagem.style.borderRadius = "10px";
+    imagem.style.margin = "15px auto";
+
+    imagem.onerror = function() {
+        console.error(
+            "Não foi possível carregar a imagem:",
+            item.imagem_url
+        );
+        imagem.alt = "Imagem indisponível";
+    };
+
+    cartao.appendChild(imagem);
+}
+
+if (item.video_url) {
+    const video = document.createElement("video");
+
+    video.src = item.video_url;
+    video.controls = true;
+    video.preload = "metadata";
+    video.playsInline = true;
+
+    video.style.display = "block";
+    video.style.width = "100%";
+    video.style.maxWidth = "500px";
+    video.style.maxHeight = "350px";
+    video.style.margin = "15px auto";
+    video.style.borderRadius = "10px";
+
+    video.onerror = function() {
+        console.error(
+            "Erro ao carregar vídeo:",
+            item.video_url
+        );
+    };
+
+    cartao.appendChild(video);
+}
+
+            const informacaoLicao = document.createElement("p");
+
+            const opcaoLicao = Array.from(
+                seletorLicoes.options
+            ).find(function(opcao) {
+                return opcao.value === String(item.licao_id);
+            });
+
+            informacaoLicao.textContent =
+                "Lição: " +
+                (opcaoLicao ? opcaoLicao.textContent : item.licao_id);
+
+            cartao.appendChild(informacaoLicao);
+
+            ["A", "B", "C", "D"].forEach(function(letra) {
+                const alternativa = document.createElement("p");
+
+                alternativa.textContent =
+                    letra + ") " +
+                    item["alternativa_" + letra.toLowerCase()];
+
+                cartao.appendChild(alternativa);
+            });
+
+            const resposta = document.createElement("p");
+            resposta.textContent =
+                "Resposta correta: " + item.correta;
+
+            resposta.style.color = "#18583C";
+            resposta.style.fontWeight = "bold";
+            cartao.appendChild(resposta);
+
+            const botaoEditar = document.createElement("button");
+            botaoEditar.type = "button";
+            botaoEditar.textContent = "Editar Pergunta";
+           
+botaoEditar.disabled = false;
+botaoEditar.title = "Editar esta pergunta";
+
+botaoEditar.addEventListener("click", function() {
+    idPerguntaEditando = item.id;
+
+    document.getElementById("licao-pergunta").value =
+        String(item.licao_id);
+
+    document.getElementById("pergunta").value =
+        item.pergunta;
+
+    document.getElementById("alternativa-a").value =
+        item.alternativa_a;
+
+    document.getElementById("alternativa-b").value =
+        item.alternativa_b;
+
+    document.getElementById("alternativa-c").value =
+        item.alternativa_c;
+
+    document.getElementById("alternativa-d").value =
+        item.alternativa_d;
+
+    document.getElementById("correta").value =
+        item.correta;
+
+    const botaoSalvar = formularioQuiz.querySelector(
+        'button[type="submit"]'
+    );
+
+    if (botaoSalvar) {
+        botaoSalvar.textContent = "Atualizar Pergunta";
+    }
+
+    mensagemQuiz.textContent =
+        "Pergunta carregada para edição. Confira os dados.";
+    mensagemQuiz.style.color = "#18583C";
+
+    formularioQuiz.scrollIntoView({
+        behavior: "smooth"
+    });
+});
+
+
+            const botaoExcluir = document.createElement("button");
+            botaoExcluir.type = "button";
+            botaoExcluir.textContent = "Excluir Pergunta";
+           
+botaoExcluir.disabled = false;
+botaoExcluir.title = "Excluir esta pergunta";
+
+botaoExcluir.addEventListener("click", async function() {
+    const confirmar = confirm(
+        "ATENÇÃO!\n\n" +
+        "Deseja realmente excluir esta pergunta?\n\n" +
+        item.pergunta +
+        "\n\nEsta ação não poderá ser desfeita."
+    );
+
+    if (!confirmar) {
+        return;
+    }
+
+    botaoExcluir.disabled = true;
+    botaoExcluir.textContent = "Excluindo...";
+
+    try {
+        await excluirPerguntaSupabase(item.id);
+
+        mensagemQuiz.textContent =
+            "Pergunta excluída com sucesso do Supabase!";
+        mensagemQuiz.style.color = "#18583C";
+
+        if (idPerguntaEditando === item.id) {
+            idPerguntaEditando = null;
+            formularioQuiz.reset();
+
+            const botaoSalvar = formularioQuiz.querySelector(
+                'button[type="submit"]'
+            );
+
+            if (botaoSalvar) {
+                botaoSalvar.textContent = "Salvar Pergunta";
+            }
+        }
+
+        await mostrarPerguntas();
+
+    } catch (erro) {
+        console.error("Erro ao excluir pergunta:", erro);
+
+        mensagemQuiz.textContent = erro.message;
+        mensagemQuiz.style.color = "red";
+
+        botaoExcluir.disabled = false;
+        botaoExcluir.textContent = "Excluir Pergunta";
+    }
+});
+
+            cartao.appendChild(botaoEditar);
+            cartao.appendChild(botaoExcluir);
+
+            lista.appendChild(cartao);
+        });
+
+        console.log(
+            "Perguntas carregadas do Supabase:",
+            perguntas.length
+        );
+
+    } catch (erro) {
+        console.error("Erro ao listar perguntas:", erro);
+        lista.textContent =
+            "Não foi possível carregar as perguntas: " + erro.message;
+    }
+}
+
+async function atualizarPerguntaSupabase(id, dadosPergunta) {
+    const token = obterTokenAdminQuiz();
+
+    const resposta = await fetch(
+        SUPABASE_URL +
+        "/rest/v1/perguntas_quiz?id=eq." +
+        encodeURIComponent(id),
+        {
+            method: "PATCH",
+            headers: {
+                "apikey": SUPABASE_PUBLISHABLE_KEY,
+                "Authorization": "Bearer " + token,
+                "Content-Type": "application/json",
+                "Prefer": "return=representation"
+            },
+            body: JSON.stringify(dadosPergunta)
+        }
+    );
+
+    if (!resposta.ok) {
+        const detalhes = await resposta.text();
+
+        throw new Error(
+            "Erro ao atualizar pergunta: " +
+            resposta.status + " - " + detalhes
+        );
+    }
+
+    const resultado = await resposta.json();
+
+    if (!Array.isArray(resultado) || resultado.length !== 1) {
+        throw new Error(
+            "A atualização não foi confirmada. Verifique as permissões."
+        );
+    }
+
+    return resultado[0];
+}
+
+async function excluirPerguntaSupabase(id) {
+    const token = obterTokenAdminQuiz();
+
+    const resposta = await fetch(
+        SUPABASE_URL +
+        "/rest/v1/perguntas_quiz?id=eq." +
+        encodeURIComponent(id),
+        {
+            method: "DELETE",
+            headers: {
+                "apikey": SUPABASE_PUBLISHABLE_KEY,
+                "Authorization": "Bearer " + token,
+                "Prefer": "return=representation"
+            }
+        }
+    );
+
+    if (!resposta.ok) {
+        const detalhes = await resposta.text();
+
+        throw new Error(
+            "Erro ao excluir pergunta: " +
+            resposta.status + " - " + detalhes
+        );
+    }
+
+    const resultado = await resposta.json();
+
+    if (!Array.isArray(resultado) || resultado.length !== 1) {
+        throw new Error(
+            "A exclusão não foi confirmada pelo Supabase."
+        );
+    }
+
+    return resultado[0];
+}
+
+async function enviarMidiaQuiz(arquivo, tipo) {
+    if (!arquivo) {
+        return null;
+    }
+
+    const tiposPermitidos = {
+        imagem: [
+            "image/png",
+            "image/jpeg",
+            "image/webp"
+        ],
+        video: [
+            "video/mp4",
+            "video/webm"
+        ]
+    };
+
+    if (!tiposPermitidos[tipo] ||
+        !tiposPermitidos[tipo].includes(arquivo.type)) {
+        throw new Error("Formato de arquivo não permitido.");
+    }
+
+    const limiteMB = tipo === "imagem" ? 5 : 50;
+
+    if (arquivo.size > limiteMB * 1024 * 1024) {
+        throw new Error(
+            "O arquivo ultrapassa o limite de " +
+            limiteMB + " MB."
+        );
+    }
+
+    const extensoes = {
+        "image/png": "png",
+        "image/jpeg": "jpg",
+        "image/webp": "webp",
+        "video/mp4": "mp4",
+        "video/webm": "webm"
+    };
+
+    const nomeArquivo =
+        tipo + "/" +
+        crypto.randomUUID() + "." +
+        extensoes[arquivo.type];
+
+    const token = obterTokenAdminQuiz();
+
+    const resposta = await fetch(
+        SUPABASE_URL +
+        "/storage/v1/object/midias-quiz/" +
+        nomeArquivo,
+        {
+            method: "POST",
+            headers: {
+                "apikey": SUPABASE_PUBLISHABLE_KEY,
+                "Authorization": "Bearer " + token,
+                "Content-Type": arquivo.type,
+                "x-upsert": "false"
+            },
+            body: arquivo
+        }
+    );
+
+    if (!resposta.ok) {
+        const detalhes = await resposta.text();
+
+        throw new Error(
+            "Erro ao enviar mídia: " +
+            resposta.status + " - " + detalhes
+        );
+    }
+
+    return SUPABASE_URL +
+        "/storage/v1/object/public/midias-quiz/" +
+        nomeArquivo;
+}
+mostrarPerguntas();
+</script>
+
+<script src="js/proteger-admin.js"></script>
+
+</body>
+</html>

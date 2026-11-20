@@ -1,0 +1,396 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Aprender | Paiter-Suruí</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+ 
+<header class="cabecalho">
+
+    <div class="logo">PAITER-SURUÍ</div>
+
+    <nav class="menu">
+        <a href="index.html">Início</a>
+        <a href="aprender.html" class="ativo">Aprender</a>
+        <a href="jogar.html">Jogar</a>
+        <a href="progresso.html">Meu Progresso</a>
+    </nav>
+
+</header>
+
+</header>
+
+    <main>
+
+<section class="apresentacao">
+    <h1>Conhecendo a cultura Paiter-Suruí</h1>
+    <p>
+        Escolha um dos temas abaixo para iniciar
+        sua jornada de aprendizagem.
+    </p>
+</section>
+
+        <h2>Conhecendo a cultura Paiter-Suruí</h2>
+
+        <p>
+            Escolha um dos temas abaixo para iniciar
+            sua jornada de aprendizagem.
+        </p>
+
+ 
+<section class="temas">
+
+    <div class="tema">
+        <h3>História</h3>
+        <p>
+            Conheça conteúdos sobre a história
+            do povo Paiter-Suruí.
+        </p>
+        <button type="button" onclick="abrirMateria('História')">
+            Estudar
+        </button>
+    </div>
+
+    <div class="tema">
+        <h3>Cultura e Tradições</h3>
+        <p>
+            Explore conhecimentos culturais
+            e tradições.
+        </p>
+        <button type="button" onclick="abrirMateria('Cultura e Tradições')">
+            Estudar
+        </button>
+    </div>
+
+    <div class="tema">
+        <h3>Território</h3>
+        <p>
+            Aprenda sobre a importância
+            do território.
+        </p>
+        <button type="button" onclick="abrirMateria('Território')">
+            Estudar
+        </button>
+    </div>
+
+    <div class="tema">
+        <h3>Natureza e Conhecimentos Tradicionais</h3>
+        <p>
+            Descubra a relação entre natureza
+            e conhecimentos tradicionais.
+        </p>
+        <button type="button" onclick="abrirMateria('Natureza e Conhecimentos Tradicionais')">
+            Estudar
+        </button>
+    </div>
+
+</section>
+
+<section class="licoes-publicadas">
+    <h2>Lições disponíveis</h2>
+    <div id="lista-licoes-aprender"></div>
+</section>
+
+    </main>
+
+    <footer>
+        <p>Projeto Educativo Paiter-Suruí</p>
+    </footer>
+<script src="js/supabase-config.js"></script>
+<script>
+async function carregarLicoes() {
+
+let licoesOnline = [];
+
+async function buscarLicoesOnline() {
+    const resposta = await fetch(
+        SUPABASE_URL + "/rest/v1/licoes?select=id,titulo,tema,conteudo&order=created_at.asc",
+        {
+            headers: {
+                "apikey": SUPABASE_PUBLISHABLE_KEY
+            }
+        }
+    );
+
+    if (!resposta.ok) {
+        throw new Error("Falha ao consultar lições: HTTP " + resposta.status);
+    }
+
+    const dados = await resposta.json();
+
+    if (!Array.isArray(dados)) {
+        throw new Error("Resposta inválida do Supabase.");
+    }
+
+    return dados;
+}
+
+    const lista = document.getElementById("lista-licoes-aprender");
+
+    if (!lista) return;
+
+   let licoes;
+
+try {
+    licoes = await buscarLicoesOnline();
+    sessionStorage.setItem(
+    "licoesOnlinePaiterSurui",
+    JSON.stringify(licoes)
+);
+    licoesOnline = licoes;
+} catch (erro) {
+    console.error("Erro ao carregar lições online:", erro);
+
+    lista.textContent =
+        "Não foi possível carregar as lições. Verifique sua conexão e atualize a página.";
+    return;
+}
+
+    lista.innerHTML = "";
+
+    if (licoes.length === 0) {
+        lista.textContent = "Nenhuma lição disponível no momento.";
+        return;
+    }
+
+    
+
+licoes.forEach(function(licao) {
+
+        const cartao = document.createElement("div");
+        cartao.className = "tema";
+
+        const titulo = document.createElement("h3");
+        titulo.textContent = licao.titulo;
+
+        const tema = document.createElement("p");
+        tema.textContent = "Tema: " + licao.tema;
+
+        const conteudo = document.createElement("p");
+        conteudo.textContent = licao.conteudo;
+
+const areaMidias = document.createElement("div");
+areaMidias.className = "midias-da-licao";
+areaMidias.style.display = "none";
+areaMidias.style.marginTop = "15px";
+        cartao.appendChild(titulo);
+        cartao.appendChild(tema);
+        cartao.appendChild(conteudo);
+
+        lista.appendChild(cartao);
+    });
+}
+
+function abrirMateria(nomeMateria) {
+    const lista = document.getElementById("lista-licoes-aprender");
+
+    if (!lista) return;
+
+const licoes = JSON.parse(
+    sessionStorage.getItem("licoesOnlinePaiterSurui") || "[]"
+);
+    const licoesDaMateria = licoes.filter(function(licao) {
+        return (licao.tema || "").trim() === nomeMateria;
+    });
+
+    lista.innerHTML = "";
+
+    const titulo = document.createElement("h2");
+    titulo.textContent = "Assuntos de " + nomeMateria;
+    lista.appendChild(titulo);
+
+const botaoVoltar = document.createElement("button");
+botaoVoltar.type = "button";
+botaoVoltar.textContent = "← Voltar às matérias";
+
+botaoVoltar.addEventListener("click", function() {
+    document.querySelector(".temas").scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
+});
+
+lista.appendChild(botaoVoltar);
+
+    if (licoesDaMateria.length === 0) {
+        const aviso = document.createElement("p");
+        aviso.textContent = "Nenhum assunto cadastrado nesta matéria.";
+        lista.appendChild(aviso);
+    }
+
+    licoesDaMateria.forEach(function(licao) {
+
+const areaMidias = document.createElement("div");
+areaMidias.className = "midias-da-licao";
+areaMidias.style.display = "none";
+areaMidias.style.marginTop = "15px";
+        const cartao = document.createElement("div");
+
+cartao.className = "tema pasta-assunto";
+       
+const tituloLicao = document.createElement("h3");
+tituloLicao.textContent = "📁 " + licao.titulo;
+tituloLicao.style.cursor = "pointer";
+
+
+        const conteudo = document.createElement("p");
+        conteudo.textContent = licao.conteudo;
+
+conteudo.style.display = "none";
+
+let midiasCarregadas = false;
+
+tituloLicao.addEventListener("click", async function() {
+    if (conteudo.style.display === "none") {
+        conteudo.style.display = "block";
+        areaMidias.style.display = "block";
+        tituloLicao.textContent = "📂 " + licao.titulo;
+
+        if (!midiasCarregadas) {
+            midiasCarregadas = true;
+            await exibirMidiasDaLicao(licao.id, areaMidias);
+        }
+    } else {
+        conteudo.style.display = "none";
+        areaMidias.style.display = "none";
+        tituloLicao.textContent = "📁 " + licao.titulo;
+    }
+});
+        
+
+cartao.appendChild(tituloLicao);
+cartao.appendChild(conteudo);
+cartao.appendChild(areaMidias);
+
+const botaoJogarLicao = document.createElement("a");
+botaoJogarLicao.href =
+    "jogar.html?licao=" + encodeURIComponent(licao.id);
+
+botaoJogarLicao.textContent = "🎮 Jogar esta lição";
+
+botaoJogarLicao.style.display = "inline-block";
+botaoJogarLicao.style.marginTop = "15px";
+botaoJogarLicao.style.padding = "12px 20px";
+botaoJogarLicao.style.backgroundColor = "#632629";
+botaoJogarLicao.style.color = "#ffffff";
+botaoJogarLicao.style.borderRadius = "8px";
+botaoJogarLicao.style.textDecoration = "none";
+botaoJogarLicao.style.fontWeight = "bold";
+
+cartao.appendChild(botaoJogarLicao);
+
+lista.appendChild(cartao);
+
+
+    });
+
+    lista.scrollIntoView({
+        behavior: "smooth",
+        block: "start"
+    });
+}
+
+carregarLicoes();
+</script>
+
+<script src="js/midias-db.js"></script>
+
+<script>
+
+async function buscarMidiasOnline(licaoId) {
+    const endereco = SUPABASE_URL +
+        "/rest/v1/midias_licoes?select=id,licao_id,nome,url" +
+        "&licao_id=eq." + encodeURIComponent(licaoId);
+
+    const resposta = await fetch(endereco, {
+        headers: {
+            "apikey": SUPABASE_PUBLISHABLE_KEY
+        }
+    });
+
+    if (!resposta.ok) {
+        throw new Error(
+            "Erro ao consultar imagens: HTTP " + resposta.status
+        );
+    }
+
+    return await resposta.json();
+}
+
+async function exibirMidiasDaLicao(licaoId, recipiente) {
+    try {
+        const midias = await buscarMidiasOnline(licaoId);
+
+        recipiente.replaceChildren();
+
+        midias.forEach(function(midia) {
+            const imagem = document.createElement("img");
+
+            imagem.src = midia.url;
+            imagem.alt = midia.nome || "Imagem da lição";
+            imagem.loading = "lazy";
+            imagem.style.maxWidth = "100%";
+            imagem.style.borderRadius = "10px";
+            imagem.style.marginTop = "12px";
+
+            imagem.onerror = function() {
+                console.error("Erro ao carregar imagem:", midia.url);
+            };
+
+            recipiente.appendChild(imagem);
+        });
+
+    } catch (erro) {
+        console.error("Erro ao carregar mídias:", erro);
+        recipiente.textContent =
+            "Não foi possível carregar as imagens desta lição.";
+    }
+}
+
+async function exibirMidiasDaLicao(licaoId, recipiente) {
+    try {
+        const midias = await buscarMidiasDaLicao(licaoId);
+
+        midias.forEach(function(midia) {
+            const url = URL.createObjectURL(midia.arquivo);
+            let elemento;
+
+            if (midia.tipo.startsWith("image/")) {
+                elemento = document.createElement("img");
+                elemento.alt = midia.nome;
+                elemento.style.maxWidth = "100%";
+                elemento.style.borderRadius = "10px";
+                elemento.style.marginTop = "12px";
+            } else if (midia.tipo.startsWith("video/")) {
+                elemento = document.createElement("video");
+                elemento.controls = true;
+                elemento.style.maxWidth = "100%";
+                elemento.style.marginTop = "12px";
+            } else {
+                URL.revokeObjectURL(url);
+                return;
+            }
+
+            elemento.src = url;
+            elemento.addEventListener("load", function() {
+                if (elemento.tagName === "IMG") {
+                    URL.revokeObjectURL(url);
+                }
+            });
+
+            recipiente.appendChild(elemento);
+        });
+    } catch (erro) {
+        console.error("Erro ao carregar mídias:", erro);
+    }
+}
+</script>
+
+</body>
+</html>

@@ -1,0 +1,303 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+
+    <title>Gerenciar Mídias | Paiter-Suruí</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body hidden>
+
+<header class="cabecalho">
+    <div class="logo">PAITER-SURUÍ</div>
+
+    <nav class="menu">
+        <a href="admin.html">Voltar ao Administrador</a>
+    </nav>
+</header>
+
+<main class="painel-admin">
+
+    <h1>Gerenciar Imagens e Vídeos</h1>
+
+    <p>
+        Consulte os arquivos cadastrados nas lições
+        do projeto educativo Paiter-Suruí.
+    </p>
+
+    <section class="admin-card">
+        <h2>Arquivos cadastrados</h2>
+
+        <div id="lista-midias">
+            A listagem de imagens e vídeos
+            será implementada na próxima etapa.
+        </div>
+    </section>
+
+<section class="painel-midias-quiz">
+    <h2>🎮 Mídias das perguntas do Quiz</h2>
+
+    <p>
+        Imagens e vídeos vinculados às perguntas
+        cadastradas no Supabase.
+    </p>
+
+    <div id="lista-midias-quiz">
+        Aguardando carregamento das mídias do Quiz...
+    </div>
+</section>
+
+</main>
+
+<footer>
+    <p>Projeto Educativo Paiter-Suruí</p>
+</footer>
+
+<script src="js/midias-db.js"></script>
+
+<script>
+async function mostrarMidias() {
+    const lista = document.getElementById("lista-midias");
+
+    lista.textContent = "Carregando arquivos...";
+
+    try {
+        const midias = await listarTodasMidias();
+
+        const licoes = JSON.parse(
+            localStorage.getItem("licoesPaiterSurui") || "[]"
+        );
+
+        lista.replaceChildren();
+
+        if (midias.length === 0) {
+            lista.textContent = "Nenhuma imagem ou vídeo cadastrado.";
+            return;
+        }
+
+        midias.forEach(function(midia) {
+            const licao = licoes.find(function(item) {
+                return item.id === midia.licaoId;
+            });
+
+            const cartao = document.createElement("div");
+            cartao.className = "admin-card";
+            cartao.style.marginTop = "15px";
+
+            const titulo = document.createElement("h3");
+            titulo.textContent = licao
+                ? licao.titulo
+                : "Lição não encontrada";
+
+            const nome = document.createElement("p");
+            nome.textContent = "Arquivo: " + midia.nome;
+
+            const tema = document.createElement("p");
+            tema.textContent = "Matéria: " +
+                (licao ? licao.tema : "Não identificada");
+
+            const url = URL.createObjectURL(midia.arquivo);
+            let visualizacao;
+
+            if (midia.tipo.startsWith("image/")) {
+                visualizacao = document.createElement("img");
+                visualizacao.alt = midia.nome;
+            } else if (midia.tipo.startsWith("video/")) {
+                visualizacao = document.createElement("video");
+                visualizacao.controls = true;
+                visualizacao.preload = "metadata";
+            }
+
+            cartao.appendChild(titulo);
+            cartao.appendChild(nome);
+            cartao.appendChild(tema);
+
+            if (visualizacao) {
+                visualizacao.src = url;
+                visualizacao.style.maxWidth = "100%";
+                visualizacao.style.maxHeight = "300px";
+                visualizacao.style.borderRadius = "10px";
+                cartao.appendChild(visualizacao);
+            } else {
+                URL.revokeObjectURL(url);
+            }
+
+const botaoExcluir = document.createElement("button");
+
+botaoExcluir.textContent = "🗑️ Excluir arquivo";
+botaoExcluir.type = "button";
+botaoExcluir.style.display = "block";
+botaoExcluir.style.margin = "15px auto";
+botaoExcluir.style.padding = "10px 20px";
+botaoExcluir.style.backgroundColor = "#B42318";
+botaoExcluir.style.color = "white";
+botaoExcluir.style.border = "none";
+botaoExcluir.style.borderRadius = "8px";
+botaoExcluir.style.cursor = "pointer";
+
+botaoExcluir.addEventListener("click", async function() {
+    const confirmar = confirm(
+        "Deseja realmente excluir este arquivo?\n\n" +
+        midia.nome +
+        "\n\nEssa ação não poderá ser desfeita."
+    );
+
+    if (!confirmar) {
+        return;
+    }
+
+    botaoExcluir.disabled = true;
+    botaoExcluir.textContent = "Excluindo...";
+
+    try {
+        await excluirMidiaPorId(midia.id);
+
+        alert("Arquivo excluído com sucesso!");
+
+        URL.revokeObjectURL(url);
+        await mostrarMidias();
+
+    } catch (erro) {
+        console.error("Erro ao excluir arquivo:", erro);
+
+        alert("Não foi possível excluir o arquivo.");
+
+        botaoExcluir.disabled = false;
+        botaoExcluir.textContent = "🗑️ Excluir arquivo";
+    }
+});
+
+const botaoBaixar = document.createElement("button");
+
+botaoBaixar.textContent = "⬇️ Baixar arquivo";
+botaoBaixar.type = "button";
+botaoBaixar.style.display = "block";
+botaoBaixar.style.margin = "15px auto";
+botaoBaixar.style.padding = "10px 20px";
+botaoBaixar.style.cursor = "pointer";
+
+botaoBaixar.addEventListener("click", function() {
+    const link = document.createElement("a");
+
+    link.href = url;
+    link.download = midia.nome || ("midia-" + midia.id);
+
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+});
+
+cartao.appendChild(botaoBaixar);
+
+cartao.appendChild(botaoExcluir);
+
+            lista.appendChild(cartao);
+        });
+
+    } catch (erro) {
+        console.error("Erro ao listar mídias:", erro);
+        lista.textContent = "Não foi possível carregar os arquivos.";
+    }
+}
+
+async function mostrarMidiasQuiz() {
+    const lista = document.getElementById("lista-midias-quiz");
+
+    if (!lista) return;
+
+    lista.textContent = "Carregando mídias do Quiz...";
+
+    try {
+        const resposta = await fetch(
+            "https://ykuzxsaasmbfgqddaknr.supabase.co/rest/v1/perguntas_quiz?select=id,pergunta,imagem_url,video_url&order=id.asc",
+            {
+                headers: {
+                    "apikey": "sb_publishable__Xy5k0IfSbmVIu7K2Ni0fg_-gCN59yx"
+                }
+            }
+        );
+
+        if (!resposta.ok) {
+            throw new Error("Erro HTTP " + resposta.status);
+        }
+
+        const perguntas = await resposta.json();
+
+        lista.replaceChildren();
+
+        let totalMidias = 0;
+
+        perguntas.forEach(function(item) {
+            [
+                { tipo: "Imagem", url: item.imagem_url },
+                { tipo: "Vídeo", url: item.video_url }
+            ].forEach(function(midia) {
+                if (!midia.url) return;
+
+                totalMidias++;
+
+                const cartao = document.createElement("div");
+                cartao.style.margin = "15px 0";
+                cartao.style.padding = "15px";
+                cartao.style.border = "1px solid #ccc";
+                cartao.style.borderRadius = "10px";
+
+                const titulo = document.createElement("h3");
+                titulo.textContent = midia.tipo + " | Pergunta " + item.id;
+
+                const descricao = document.createElement("p");
+                descricao.textContent = item.pergunta;
+
+                cartao.appendChild(titulo);
+                cartao.appendChild(descricao);
+
+                const url = new URL(midia.url);
+
+                if (url.protocol !== "https:") return;
+
+                if (midia.tipo === "Imagem") {
+                    const imagem = document.createElement("img");
+                    imagem.src = url.href;
+                    imagem.alt = "Imagem da pergunta";
+                    imagem.style.maxWidth = "100%";
+                    imagem.style.maxHeight = "300px";
+                    cartao.appendChild(imagem);
+                } else {
+                    const video = document.createElement("video");
+                    video.src = url.href;
+                    video.controls = true;
+                    video.preload = "metadata";
+                    video.style.maxWidth = "100%";
+                    video.style.maxHeight = "300px";
+                    cartao.appendChild(video);
+                }
+
+                lista.appendChild(cartao);
+            });
+        });
+
+        if (totalMidias === 0) {
+            lista.textContent =
+                "Nenhuma imagem ou vídeo vinculado às perguntas.";
+        }
+
+        console.log("Mídias do Quiz encontradas:", totalMidias);
+
+    } catch (erro) {
+        console.error("Erro ao carregar mídias do Quiz:", erro);
+        lista.textContent =
+            "Não foi possível carregar as mídias do Quiz.";
+    }
+}
+
+mostrarMidias();
+mostrarMidiasQuiz();
+</script>
+<script src="js/supabase-config.js"></script>
+<script src="js/proteger-admin.js"></script>
+</body>
+</html>

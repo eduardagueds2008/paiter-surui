@@ -1,0 +1,314 @@
+
+
+/* =========================
+   PALETA DE CORES
+========================= */
+
+:root {
+    --vermelho-terra: #632629;
+    --verde: #18583C;
+    --bege: #F5EBDD;
+    --creme: #FFFCF7;
+    --marrom: #4B2D25;
+}
+
+/* =========================
+   CONFIGURAÇÃO GERAL
+========================= */
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    background-color: var(--bege);
+    font-family: Arial, sans-serif;
+    color: var(--marrom);
+    text-align: center;
+}
+
+p {
+    font-size: 17px;
+    line-height: 1.6;
+}
+
+/* =========================
+   CABEÇALHO E MENU
+========================= */
+
+.cabecalho {
+    background-color: #FFF8EE;
+    padding: 18px 35px;
+    border-bottom: 4px solid var(--verde);
+
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    flex-wrap: wrap;
+}
+
+/* Nome Paiter-Suruí */
+
+.cabecalho h1 {
+    background: transparent;
+    color: var(--verde);
+    font-size: 26px;
+    margin: 0;
+    padding: 0;
+}
+
+/* Menu de navegação */
+
+.menu {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 15px;
+}
+
+.menu a {
+    color: var(--verde);
+    text-decoration: none;
+    font-size: 16px;
+    font-weight: 500;
+    padding: 10px 15px;
+    border-radius: 10px;
+    transition: 0.3s;
+}
+
+.menu a:hover {
+    background-color: #E4EDE5;
+}
+
+/* Destaque somente da página atual */
+
+.menu a.ativo {
+    background-color: var(--verde);
+    color: white;
+}
+
+
+/* =========================
+   TÍTULOS
+========================= */
+
+h1 {
+    background-color: var(--vermelho-terra);
+    color: white;
+    padding: 35px 20px;
+    margin: 0;
+    font-size: 36px;
+}
+
+h2 {
+    color: var(--marrom);
+    font-size: 28px;
+    margin-top: 35px;
+}
+
+h3 {
+    color: var(--marrom);
+}
+
+/* =========================
+   BOTÕES
+========================= */
+
+button,
+.tema a {
+    background-color: var(--vermelho-terra);
+    color: white;
+    border: none;
+    border-radius: 30px;
+    padding: 14px 30px;
+    margin: 10px;
+    font-size: 16px;
+    cursor: pointer;
+    text-decoration: none;
+    display: inline-block;
+    transition: 0.3s;
+}
+
+button:hover,
+.tema a:hover {
+    background-color: #874348;
+    transform: translateY(-3px);
+}
+
+/* =========================
+   PÁGINA APRENDER
+========================= */
+
+.temas {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+    max-width: 1450px;
+    margin: 35px auto;
+    padding: 0 25px;
+}
+
+/* Cartões */
+
+.tema {
+    background-color: var(--creme);
+    border-radius: 18px;
+    padding: 25px;
+    border-top: 7px solid var(--vermelho-terra);
+    box-shadow: 0 5px 18px rgba(72, 43, 32, 0.08);
+    transition: 0.3s;
+}
+
+.tema:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(72, 43, 32, 0.15);
+}
+
+.tema h3 {
+    font-size: 24px;
+    margin: 15px 0;
+}
+
+.tema p {
+    font-size: 17px;
+    line-height: 1.6;
+    margin: 15px 0;
+}
+
+/* Cores das faixas dos cartões */
+
+.tema:nth-child(1) {
+    border-top-color: #632629;
+}
+
+.tema:nth-child(2) {
+    border-top-color: #B16E55;
+}
+
+.tema:nth-child(3) {
+    border-top-color: #668069;
+}
+
+.tema:nth-child(4) {
+    border-top-color: #B48B5E;
+}
+
+/* LIÇÕES NA PÁGINA APRENDER */
+
+.licoes-publicadas {
+    max-width: 1200px;
+    margin: 40px auto;
+    padding: 0 25px;
+}
+
+.licoes-publicadas h2 {
+    color: #632629;
+    margin-bottom: 25px;
+}
+
+#lista-licoes-aprender {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 25px;
+}
+
+@media (max-width: 650px) {
+    #lista-licoes-aprender {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* BOTÃO DO ADMINISTRADOR */
+
+.botao-admin {
+    display: inline-block;
+    background-color: #632629;
+    color: white;
+    padding: 12px 30px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-weight: bold;
+}
+
+.botao-admin:hover {
+    background-color: #874348;
+}
+
+/* LISTA DE PERGUNTAS DO QUIZ */
+
+#lista-perguntas {
+    max-width: 800px;
+    margin: 25px auto;
+    padding: 0 15px;
+    text-align: left;
+}
+
+#lista-perguntas .admin-card {
+    background-color: #FFFCF7;
+    border-top: 6px solid #632629;
+    border-radius: 15px;
+    padding: 25px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+
+#lista-perguntas h3 {
+    color: #632629;
+    font-size: 21px;
+}
+
+#lista-perguntas p {
+    color: #4B2D25;
+    margin: 12px 0;
+}
+
+#lista-perguntas p:last-child {
+    color: #18583C;
+    font-weight: bold;
+}
+
+.botao-inicio {
+    display: inline-block;
+    background-color: #632629;
+    color: white;
+    padding: 15px 30px;
+    margin: 8px;
+    border-radius: 30px;
+    text-decoration: none;
+    font-size: 16px;
+    text-align: center;
+}
+
+.botao-inicio:hover {
+    background-color: #18583C;
+    color: white;
+}
+
+/* Pastas dos assuntos das lições */
+
+.pasta-assunto {
+    background-color: #f3f7ef;
+    border: 1px solid #cbd9c5;
+    border-radius: 10px;
+    padding: 15px;
+    margin-bottom: 12px;
+}
+
+.pasta-assunto h3 {
+    color: #245c38;
+    cursor: pointer;
+    margin: 0;
+}
+
+.pasta-assunto h3:hover {
+    color: #168044;
+    text-decoration: underline;
+}
+
+.pasta-assunto p {
+    margin-top: 15px;
+    line-height: 1.6;
+}

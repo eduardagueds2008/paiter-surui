@@ -1,0 +1,538 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Jogar | Paiter-Suruí</title>
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        .area-jogo {
+            max-width: 750px;
+            margin: 40px auto;
+            padding: 25px;
+            background: #FFFCF7;
+            border-radius: 18px;
+            text-align: center;
+        }
+
+        .area-jogo h2 {
+            color: #632629;
+        }
+
+        .alternativa-jogo {
+            display: block;
+            width: 100%;
+            margin: 12px 0;
+            padding: 15px;
+            border: 2px solid #632629;
+            border-radius: 12px;
+            background: #F5EBDD;
+            color: #4B2D25;
+            font-size: 17px;
+            cursor: pointer;
+        }
+
+        .alternativa-jogo:hover {
+            background: #EAD8C7;
+        }
+
+        .alternativa-jogo:disabled {
+            cursor: default;
+        }
+
+        #proxima-pergunta {
+            display: none;
+            margin-top: 20px;
+        }
+
+        #resultado-jogo {
+            font-weight: bold;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <header class="cabecalho">
+        <div class="logo">PAITER-SURUÍ</div>
+
+        <nav class="menu">
+            <a href="index.html">Início</a>
+            <a href="aprender.html">Aprender</a>
+            <a href="jogar.html" class="ativo">Jogar</a>
+            <a href="progresso.html">Meu Progresso</a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="apresentacao">
+            <h1>Hora de Jogar!</h1>
+            <p>Teste seus conhecimentos e divirta-se aprendendo.</p>
+        </section>
+
+        <section class="area-jogo">
+
+<div id="selecao-licao-jogo" style="margin-bottom: 25px;">
+    <label for="licao-jogo">
+        <strong>Escolha uma lição para jogar:</strong>
+    </label>
+
+    <select
+        id="licao-jogo"
+        style="display: block; width: 100%; padding: 12px; margin-top: 10px; border-radius: 10px;"
+    >
+        <option value="">Todas as lições</option>
+    </select>
+</div>
+
+            <p id="contador-jogo"></p>
+
+            <h2 id="pergunta-jogo">
+                Carregando pergunta...
+            </h2>
+
+<div id="midia-pergunta-jogo"></div>
+
+            <div id="alternativas-jogo"></div>
+
+            <p id="resultado-jogo" aria-live="polite"></p>
+
+            <button id="proxima-pergunta" type="button">
+                Próxima Pergunta
+            </button>
+        </section>
+    </main>
+
+    <footer>
+        <p>Projeto Educativo Paiter-Suruí</p>
+    </footer>
+
+    
+<script src="js/supabase-config.js"></script>
+
+<script>
+    let perguntas = [];
+
+let todasPerguntas = [];
+
+async function carregarLicoesJogo() {
+    const seletor = document.getElementById("licao-jogo");
+
+    try {
+        const resposta = await fetch(
+            SUPABASE_URL + "/rest/v1/licoes?select=id,titulo&order=titulo.asc",
+            {
+                headers: {
+                    "apikey": SUPABASE_PUBLISHABLE_KEY
+                }
+            }
+        );
+
+        if (!resposta.ok) {
+            throw new Error("Erro HTTP " + resposta.status);
+        }
+
+        const licoes = await resposta.json();
+
+        seletor.innerHTML = "";
+
+        const opcaoTodas = document.createElement("option");
+        opcaoTodas.value = "";
+        opcaoTodas.textContent = "Todas as lições";
+        seletor.appendChild(opcaoTodas);
+
+        licoes.forEach(function(licao) {
+            const opcao = document.createElement("option");
+
+            opcao.value = String(licao.id);
+            opcao.textContent = licao.titulo;
+
+            seletor.appendChild(opcao);
+        });
+
+        console.log("Lições carregadas no jogo:", licoes.length);
+
+    } catch (erro) {
+        console.error("Erro ao carregar lições:", erro);
+    }
+}
+
+async function carregarPerguntasJogo() {
+    try {
+        const resposta = await fetch(
+            SUPABASE_URL + "/rest/v1/perguntas_quiz?select=*&order=id.asc",
+            {
+                headers: {
+                    "apikey": SUPABASE_PUBLISHABLE_KEY
+                }
+            }
+        );
+
+        if (!resposta.ok) {
+            throw new Error(
+                "Erro HTTP " + resposta.status
+            );
+        }
+
+        const dados = await resposta.json();
+
+      todasPerguntas = dados.map(function(item) {
+            return {
+                id: item.id,
+                licao_id: item.licao_id,
+                pergunta: item.pergunta,
+                alternativas: {
+                    A: item.alternativa_a,
+                    B: item.alternativa_b,
+                    C: item.alternativa_c,
+                    D: item.alternativa_d
+                },
+                correta: item.correta,
+                imagem_url: item.imagem_url,
+                video_url: item.video_url
+            };
+        });
+
+perguntas = [...todasPerguntas];
+
+for (let i = perguntas.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+
+    [perguntas[i], perguntas[j]] =
+        [perguntas[j], perguntas[i]];
+}
+        console.log(
+            "Perguntas carregadas do Supabase:",
+            perguntas.length
+        );
+
+        indiceAtual = 0;
+        pontuacao = 0;
+
+ 
+if (perguntas.length === 0) {
+    perguntaJogo.textContent = "Nenhuma pergunta cadastrada ainda.";
+    contadorJogo.textContent = "";
+} else {
+    mostrarPergunta();
+}
+
+    } catch (erro) {
+        console.error(
+            "Erro ao carregar perguntas:",
+            erro
+        );
+
+        perguntaJogo.textContent =
+            "Não foi possível carregar as perguntas.";
+    }
+}
+
+
+        let indiceAtual = 0;
+        let pontuacao = 0;
+
+        const perguntaJogo =
+            document.getElementById("pergunta-jogo");
+
+        const alternativasJogo =
+            document.getElementById("alternativas-jogo");
+
+        const resultadoJogo =
+            document.getElementById("resultado-jogo");
+
+        const botaoProxima =
+            document.getElementById("proxima-pergunta");
+
+        const contadorJogo =
+            document.getElementById("contador-jogo");
+
+        function mostrarPergunta() {
+            if (indiceAtual >= perguntas.length) {
+
+const historico = JSON.parse(
+    localStorage.getItem("progressoPaiterSurui") || "[]"
+);
+
+historico.push({
+    data: new Date().toLocaleString("pt-BR"),
+    acertos: pontuacao,
+    total: perguntas.length
+});
+
+localStorage.setItem(
+    "progressoPaiterSurui",
+    JSON.stringify(historico)
+);
+
+                perguntaJogo.textContent = "Jogo finalizado!";
+
+                contadorJogo.textContent = "";
+
+                alternativasJogo.innerHTML = "";
+
+                resultadoJogo.textContent =
+                    "Você acertou " + pontuacao +
+                    " de " + perguntas.length + " perguntas!";
+
+                botaoProxima.style.display = "none";
+
+const botaoReiniciar = document.createElement("button");
+botaoReiniciar.type = "button";
+botaoReiniciar.textContent = "JOGAR NOVAMENTE";
+botaoReiniciar.style.marginTop = "20px";
+
+
+botaoReiniciar.addEventListener("click", function() {
+    for (let i = perguntas.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+
+        [perguntas[i], perguntas[j]] =
+            [perguntas[j], perguntas[i]];
+    }
+
+    indiceAtual = 0;
+    pontuacao = 0;
+
+    mostrarPergunta();
+});
+
+
+alternativasJogo.appendChild(botaoReiniciar);
+
+                return;
+            }
+
+            const atual = perguntas[indiceAtual];
+
+            perguntaJogo.textContent = atual.pergunta;
+
+const areaMidia = document.getElementById("midia-pergunta-jogo");
+
+areaMidia.innerHTML = "";
+
+if (atual.imagem_url) {
+    const imagem = document.createElement("img");
+
+    imagem.src = atual.imagem_url;
+    imagem.alt = "Imagem da pergunta";
+    imagem.loading = "lazy";
+
+    imagem.style.width = "100%";
+    imagem.style.maxWidth = "500px";
+    imagem.style.maxHeight = "350px";
+    imagem.style.objectFit = "contain";
+    imagem.style.margin = "15px auto";
+    imagem.style.borderRadius = "10px";
+    imagem.style.display = "block";
+
+    areaMidia.appendChild(imagem);
+}
+
+if (atual.video_url) {
+    const video = document.createElement("video");
+
+    video.src = atual.video_url;
+    video.controls = true;
+    video.preload = "metadata";
+    video.playsInline = true;
+
+    video.style.width = "100%";
+    video.style.maxWidth = "500px";
+    video.style.maxHeight = "350px";
+    video.style.margin = "15px auto";
+    video.style.borderRadius = "10px";
+    video.style.display = "block";
+
+    areaMidia.appendChild(video);
+}
+
+            contadorJogo.textContent =
+                "Pergunta " + (indiceAtual + 1) +
+                " de " + perguntas.length;
+
+            alternativasJogo.innerHTML = "";
+            resultadoJogo.textContent = "";
+            botaoProxima.style.display = "none";
+
+            
+const alternativasEmbaralhadas = ["A", "B", "C", "D"].map(function(letra) {
+    return {
+        texto: atual.alternativas[letra],
+        correta: letra === atual.correta
+    };
+});
+
+for (let i = alternativasEmbaralhadas.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+
+    [alternativasEmbaralhadas[i], alternativasEmbaralhadas[j]] =
+        [alternativasEmbaralhadas[j], alternativasEmbaralhadas[i]];
+}
+
+atual.alternativasExibidas = alternativasEmbaralhadas;
+
+alternativasEmbaralhadas.forEach(function(alternativa, indice) {
+    const botao = document.createElement("button");
+    const letraExibida = ["A", "B", "C", "D"][indice];
+
+    botao.type = "button";
+    botao.className = "alternativa-jogo";
+    botao.textContent = letraExibida + ") " + alternativa.texto;
+
+    botao.addEventListener("click", function() {
+        verificarResposta(letraExibida);
+    });
+
+    alternativasJogo.appendChild(botao);
+});
+
+        }
+
+ 
+function verificarResposta(resposta) {
+    const atual = perguntas[indiceAtual];
+    const alternativas = atual.alternativasExibidas;
+
+    const letras = ["A", "B", "C", "D"];
+    const indiceResposta = letras.indexOf(resposta);
+
+    if (!alternativas || indiceResposta === -1) {
+        console.error("Alternativas inválidas.");
+        return;
+    }
+
+    const alternativaEscolhida = alternativas[indiceResposta];
+
+    const botoes = alternativasJogo.querySelectorAll(
+        ".alternativa-jogo"
+    );
+
+    botoes.forEach(function(botao, indice) {
+        botao.disabled = true;
+
+        if (alternativas[indice].correta) {
+            botao.style.backgroundColor = "#18583C";
+            botao.style.color = "#FFFFFF";
+            botao.style.borderColor = "#18583C";
+        } else if (indice === indiceResposta) {
+            botao.style.backgroundColor = "#A52A2A";
+            botao.style.color = "#FFFFFF";
+            botao.style.borderColor = "#A52A2A";
+        }
+    });
+
+    if (alternativaEscolhida.correta) {
+        pontuacao++;
+
+        resultadoJogo.textContent =
+            "Parabéns! Resposta correta!";
+
+        resultadoJogo.style.color = "#18583C";
+    } else {
+        const indiceCorreto = alternativas.findIndex(
+            function(alternativa) {
+                return alternativa.correta;
+            }
+        );
+
+        resultadoJogo.textContent =
+            "Resposta incorreta. A correta é " +
+            letras[indiceCorreto] + ".";
+
+        resultadoJogo.style.color = "#632629";
+    }
+
+    botaoProxima.textContent =
+        indiceAtual === perguntas.length - 1
+            ? "Ver Resultado"
+            : "Próxima Pergunta";
+
+    botaoProxima.style.display = "inline-block";
+}
+
+        botaoProxima.addEventListener("click", function() {
+            indiceAtual++;
+            mostrarPergunta();
+        });
+
+document.getElementById("licao-jogo").addEventListener(
+    "change",
+    function() {
+        const licaoSelecionada = this.value;
+
+        if (licaoSelecionada === "") {
+            perguntas = [...todasPerguntas];
+        } else {
+            perguntas = todasPerguntas.filter(function(item) {
+                return String(item.licao_id) === licaoSelecionada;
+            });
+        }
+
+        for (let i = perguntas.length - 1; i > 0; i--) {
+            const j = Math.floor(Math.random() * (i + 1));
+
+            [perguntas[i], perguntas[j]] =
+                [perguntas[j], perguntas[i]];
+        }
+
+        indiceAtual = 0;
+        pontuacao = 0;
+
+        const areaMidia = document.getElementById(
+            "midia-pergunta-jogo"
+        );
+
+        areaMidia.innerHTML = "";
+        alternativasJogo.innerHTML = "";
+        resultadoJogo.textContent = "";
+        botaoProxima.style.display = "none";
+
+        if (perguntas.length === 0) {
+            perguntaJogo.textContent =
+                "Esta lição ainda não possui perguntas cadastradas.";
+
+            contadorJogo.textContent = "";
+        } else {
+            mostrarPergunta();
+        }
+    }
+);
+
+async function selecionarLicaoPeloLink() {
+    const parametros = new URLSearchParams(window.location.search);
+    const licaoId = parametros.get("licao");
+
+    if (!licaoId) {
+        return;
+    }
+
+    const seletor = document.getElementById("licao-jogo");
+
+    // Aguarda o carregamento das lições e perguntas.
+    await Promise.all([
+        carregarLicoesJogo(),
+        carregarPerguntasJogo()
+    ]);
+
+    const opcaoExiste = Array.from(seletor.options).some(
+        function(opcao) {
+            return opcao.value === licaoId;
+        }
+    );
+
+    if (opcaoExiste) {
+        seletor.value = licaoId;
+        seletor.dispatchEvent(new Event("change"));
+    }
+}
+
+selecionarLicaoPeloLink();
+
+    </script>
+
+</body>
+</html>

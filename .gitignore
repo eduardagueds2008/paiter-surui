@@ -1,0 +1,24 @@
+
+# Backups
+*BACKUP*
+*backup*
+*Backup*
+
+# Arquivos de teste
+teste-*.html
+*-teste-*.html
+backup-dados.html
+
+# Configuracoes locais e segredos
+.env
+.env.*
+*.pem
+*.key
+
+# Dependencias e arquivos temporarios
+node_modules/
+.vscode/
+# Arquivos antigos e ferramentas de manutencao
+converter-licoes.html
+gerenciar-licoes-antigo.html
+gerenciar-licoes-exclusao-completa-teste.html

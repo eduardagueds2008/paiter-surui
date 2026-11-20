@@ -1,0 +1,397 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gerenciar Lições | Paiter-Suruí</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body hidden>
+
+    <header class="cabecalho">
+        <div class="logo">PAITER-SURUÍ</div>
+
+        <nav class="menu">
+            <a href="admin.html">Voltar ao Administrador</a>
+        </nav>
+    </header>
+
+    <main class="painel-admin">
+        <h1>Gerenciar Lições</h1>
+
+        <section class="admin-card" style="max-width: 700px; margin: 30px auto;">
+            <h2 id="titulo-formulario">Cadastrar nova lição</h2>
+
+            <form id="form-licao">
+                <label for="titulo">Título da lição:</label>
+                <input type="text" id="titulo" required>
+
+                <label for="tema">Tema:</label>
+                <select id="tema" required>
+                    <option value="">Selecione um tema</option>
+                    <option>História</option>
+                    <option>Cultura e Tradições</option>
+                    <option>Território</option>
+                    <option>Natureza e Conhecimentos Tradicionais</option>
+                </select>
+
+<label for="conteudo">Conteúdo da lição:</label>
+<textarea id="conteudo" rows="8" required></textarea>
+
+<label for="imagens-licao">Adicionar imagens da lição:</label>
+<input
+    type="file"
+    id="imagens-licao"
+    accept="image/jpeg,image/png,image/webp"
+    multiple
+>
+
+<label for="video-licao">Adicionar vídeo da lição:</label>
+<input
+    type="file"
+    id="video-licao"
+    accept="video/mp4,video/webm"
+>
+
+<div id="previa-midias" style="margin: 20px 0;">
+    <h3>Prévia das imagens e do vídeo</h3>
+    <div id="previa-imagens"></div>
+
+<div id="midias-existentes" style="margin-top: 20px;">
+    <h3>Imagens e vídeos já cadastrados</h3>
+    <p>Selecione uma lição para visualizar seus arquivos.</p>
+</div>
+
+    <div id="previa-video"></div>
+</div>
+
+<button type="submit" id="botao-salvar">Salvar Lição</button>
+<button type="button" id="cancelar-edicao" hidden>Cancelar edição</button>
+            </form>
+
+            <p id="mensagem-licao"></p>
+
+<h2>Lições cadastradas</h2>
+
+<div id="lista-licoes"></div>
+
+        </section>
+    </main>
+
+    <footer>
+        <p>Projeto Educativo Paiter-Suruí</p>
+    </footer>
+
+<script src="js/supabase-config.js"></script>
+<script src="js/proteger-admin.js"></script>
+<script>
+"use strict";
+const formulario = document.getElementById("form-licao");
+const mensagem = document.getElementById("mensagem-licao");
+const lista = document.getElementById("lista-licoes");
+const campoImagens = document.getElementById("imagens-licao");
+const campoVideo = document.getElementById("video-licao");
+const previaImagens = document.getElementById("previa-imagens");
+const previaVideo = document.getElementById("previa-video");
+const areaMidias = document.getElementById("midias-existentes");
+const botaoSalvar = document.getElementById("botao-salvar");
+const botaoCancelar = document.getElementById("cancelar-edicao");
+let idLicaoEditando = null;
+let trabalhando = false;
+let urlsPrevias = [];
+
+function informar(texto, erro = false) {
+    mensagem.textContent = texto;
+    mensagem.style.color = erro ? "#B42318" : "#18583C";
+}
+function obterTokenAdministrador() {
+    let sessao;
+    try { sessao = JSON.parse(sessionStorage.getItem("paiterAdminSessao") || "null"); }
+    catch (_) { sessao = null; }
+    if (!sessao || !sessao.access_token) throw new Error("Sessão expirada. Faça login novamente.");
+    return sessao.access_token;
+}
+async function requisicao(caminho, opcoes = {}, autenticada = true) {
+    const cabecalhos = { "apikey": SUPABASE_PUBLISHABLE_KEY, ...(opcoes.headers || {}) };
+    if (autenticada) cabecalhos.Authorization = "Bearer " + obterTokenAdministrador();
+    const resposta = await fetch(SUPABASE_URL + caminho, { ...opcoes, headers: cabecalhos });
+    if (!resposta.ok) {
+        const detalhes = (await resposta.text()).slice(0, 350);
+        throw new Error("HTTP " + resposta.status + ": " + detalhes);
+    }
+    return resposta;
+}
+async function buscarLicoesSupabase() {
+    const resposta = await requisicao("/rest/v1/licoes?select=id,titulo,tema,conteudo&order=created_at.asc", {}, false);
+    const dados = await resposta.json();
+    if (!Array.isArray(dados)) throw new Error("Resposta inválida ao consultar lições.");
+    return dados;
+}
+async function buscarMidiasSupabase(licaoId) {
+    const resposta = await requisicao("/rest/v1/midias_licoes?select=id,licao_id,url,nome&licao_id=eq." + encodeURIComponent(licaoId) + "&order=created_at.asc", {}, false);
+    return await resposta.json();
+}
+// Exclui somente objetos deste bucket; URLs externas ou malformadas bloqueiam a operação.
+function caminhoStorageDaMidia(url) {
+    const prefixo = SUPABASE_URL.replace(/\/$/, "") + "/storage/v1/object/public/midias-licoes/";
+    if (typeof url !== "string" || !url.startsWith(prefixo)) {
+        throw new Error("Mídia com endereço fora do bucket autorizado. Exclusão interrompida.");
+    }
+    const caminhoCodificado = url.slice(prefixo.length);
+    if (!caminhoCodificado || caminhoCodificado.includes("?") || caminhoCodificado.includes("#")) {
+        throw new Error("Endereço de mídia inválido. Exclusão interrompida.");
+    }
+    const segmentos = caminhoCodificado.split("/");
+    if (segmentos.some(parte => !parte || parte === "." || parte === "..")) {
+        throw new Error("Caminho de mídia inválido. Exclusão interrompida.");
+    }
+    return segmentos.map(parte => encodeURIComponent(decodeURIComponent(parte))).join("/");
+}
+
+async function excluirLicaoComMidias(licao) {
+    // Pré-validação: nenhum arquivo é apagado antes da conferência completa.
+    const midias = await buscarMidiasSupabase(licao.id);
+    if (!Array.isArray(midias)) throw new Error("Não foi possível verificar as mídias da lição.");
+    const arquivos = midias.map(midia => ({...midia, caminho: caminhoStorageDaMidia(midia.url)}));
+   
+    const confirmacao = prompt(
+        "EXCLUSÃO DEFINITIVA\n\nLição: " + licao.titulo +
+        "\nArquivos vinculados: " + arquivos.length +
+        "\n\nEsta ação apagará a lição, as imagens e os vídeos. Não poderá ser desfeita." +
+        "\n\nDigite exatamente o TÍTULO da lição para confirmar:"
+    );
+    if (confirmacao === null) return false;
+    if (confirmacao !== licao.titulo) throw new Error("Título diferente. Exclusão cancelada sem alterações.");
+    if (!confirm("Confirma a exclusão definitiva de '" + licao.titulo + "' e de " + arquivos.length + " arquivo(s)?")) return false;
+
+    // Storage e PostgREST não compartilham transação. Processamos um arquivo por vez,
+    // interrompendo imediatamente em caso de falha e mantendo a lição até o final.
+    let removidos = 0;
+    for (const midia of arquivos) {
+        try {
+            await requisicao("/storage/v1/object/midias-licoes/" + midia.caminho, {method:"DELETE"});
+            const resposta = await requisicao("/rest/v1/midias_licoes?id=eq." + encodeURIComponent(midia.id) + "&licao_id=eq." + encodeURIComponent(licao.id), {
+                method:"DELETE", headers:{"Prefer":"return=representation"}
+            });
+            const excluidas = await resposta.json();
+            if (!Array.isArray(excluidas) || excluidas.length !== 1) {
+                throw new Error("O registro da mídia não foi removido do banco. Confira as políticas DELETE.");
+            }
+            removidos++;
+        } catch (erro) {
+            throw new Error("Exclusão interrompida após " + removidos + " arquivo(s) concluído(s). " +
+                "A lição foi mantida. Verifique o Storage e a tabela midias_licoes antes de tentar novamente. " + erro.message);
+        }
+    }
+    // Nova conferência evita excluir a lição se surgirem outros vínculos.
+    const restantes = await buscarMidiasSupabase(licao.id);
+    if (!Array.isArray(restantes) || restantes.length) {
+        throw new Error("Ainda existem mídias vinculadas. A lição foi mantida.");
+    }
+    const resposta = await requisicao("/rest/v1/licoes?id=eq." + encodeURIComponent(licao.id), {
+        method:"DELETE", headers:{"Prefer":"return=representation"}
+    });
+    const excluidas = await resposta.json();
+    if (!Array.isArray(excluidas) || excluidas.length !== 1) {
+        throw new Error("Não foi possível confirmar a exclusão da lição. Confira as permissões DELETE.");
+    }
+    return true;
+}
+
+function limparPrevias() {
+    urlsPrevias.forEach(url => URL.revokeObjectURL(url));
+    urlsPrevias = [];
+    previaImagens.replaceChildren();
+    previaVideo.replaceChildren();
+}
+function atualizarPrevias() {
+    limparPrevias();
+    for (const arquivo of campoImagens.files) {
+        if (!arquivo.type.startsWith("image/")) continue;
+        const url = URL.createObjectURL(arquivo);
+        urlsPrevias.push(url);
+        const img = document.createElement("img");
+        img.src = url; img.alt = arquivo.name;
+        img.style.cssText = "max-width:150px;margin:8px;border-radius:10px";
+        previaImagens.appendChild(img);
+    }
+    const arquivo = campoVideo.files[0];
+    if (arquivo && arquivo.type.startsWith("video/")) {
+        const url = URL.createObjectURL(arquivo);
+        urlsPrevias.push(url);
+        const video = document.createElement("video");
+        video.src = url; video.controls = true;
+        video.style.cssText = "max-width:400px;width:100%";
+        previaVideo.appendChild(video);
+    }
+}
+campoImagens.addEventListener("change", atualizarPrevias);
+campoVideo.addEventListener("change", atualizarPrevias);
+
+async function enviarMidia(licaoId, arquivo) {
+    const tipos = ["image/jpeg", "image/png", "image/webp", "video/mp4", "video/webm"];
+    if (!tipos.includes(arquivo.type)) throw new Error("Tipo de arquivo não permitido: " + arquivo.name);
+    const extensoes = {"image/jpeg":"jpg", "image/png":"png", "image/webp":"webp", "video/mp4":"mp4", "video/webm":"webm"};
+    const caminho = String(licaoId) + "/" + crypto.randomUUID() + "." + extensoes[arquivo.type];
+    await requisicao("/storage/v1/object/midias-licoes/" + caminho, {
+        method: "POST", headers: { "Content-Type": arquivo.type, "x-upsert": "false" }, body: arquivo
+    });
+    const url = SUPABASE_URL + "/storage/v1/object/public/midias-licoes/" + caminho;
+    try {
+        await requisicao("/rest/v1/midias_licoes", {
+            method: "POST", headers: { "Content-Type": "application/json", "Prefer": "return=minimal" },
+            body: JSON.stringify({ licao_id: licaoId, url, nome: arquivo.name })
+        });
+    } catch (erro) {
+        throw new Error("Arquivo enviado, mas o vínculo não foi registrado. Informe o administrador para verificar o arquivo " + caminho + ". " + erro.message);
+    }
+}
+async function enviarArquivosDaLicao(licaoId) {
+    const arquivos = [...campoImagens.files];
+    if (campoVideo.files[0]) arquivos.push(campoVideo.files[0]);
+    for (const arquivo of arquivos) await enviarMidia(licaoId, arquivo);
+}
+function finalizarEdicao() {
+    idLicaoEditando = null;
+    formulario.reset();
+    limparPrevias();
+    document.getElementById("titulo-formulario").textContent = "Cadastrar nova lição";
+    botaoCancelar.hidden = true;
+    botaoSalvar.textContent = "Salvar Lição";
+    areaMidias.replaceChildren();
+    const p = document.createElement("p");
+    p.textContent = "Selecione uma lição para visualizar seus arquivos.";
+    areaMidias.appendChild(p);
+}
+botaoCancelar.addEventListener("click", () => { finalizarEdicao(); informar("Edição cancelada."); });
+async function mostrarMidiasExistentes(licaoId) {
+    areaMidias.replaceChildren();
+    const titulo = document.createElement("h3");
+    titulo.textContent = "Imagens e vídeos já cadastrados";
+    areaMidias.appendChild(titulo);
+    try {
+        const midias = await buscarMidiasSupabase(licaoId);
+        if (idLicaoEditando !== licaoId) return;
+        if (!midias.length) {
+            const p = document.createElement("p"); p.textContent = "Esta lição não possui mídias online.";
+            areaMidias.appendChild(p); return;
+        }
+        for (const midia of midias) {
+            const bloco = document.createElement("div");
+            bloco.style.margin = "12px 0";
+            const nome = document.createElement("p"); nome.textContent = midia.nome;
+            bloco.appendChild(nome);
+            const ehVideo = /\.(mp4|webm)(\?|$)/i.test(midia.url);
+            const elemento = document.createElement(ehVideo ? "video" : "img");
+            elemento.src = midia.url;
+            elemento.style.cssText = "max-width:100%;max-height:250px;border-radius:8px";
+            if (ehVideo) elemento.controls = true;
+            else elemento.alt = midia.nome;
+            bloco.appendChild(elemento);
+            areaMidias.appendChild(bloco);
+        }
+        const aviso = document.createElement("p");
+        aviso.textContent = "Para proteger os arquivos existentes, a exclusão e a substituição de mídias online ainda não estão habilitadas.";
+        areaMidias.appendChild(aviso);
+    } catch (erro) {
+        console.error(erro);
+        const p = document.createElement("p"); p.textContent = "Não foi possível consultar as mídias online.";
+        areaMidias.appendChild(p);
+    }
+}
+async function mostrarLicoes() {
+    lista.textContent = "Carregando lições do Supabase...";
+    try {
+        const licoes = await buscarLicoesSupabase();
+        lista.replaceChildren();
+        if (!licoes.length) { lista.textContent = "Nenhuma lição cadastrada."; return; }
+        for (const licao of licoes) {
+            const cartao = document.createElement("div");
+            cartao.className = "admin-card";
+            cartao.style.marginTop = "15px";
+            const titulo = document.createElement("h3"); titulo.textContent = licao.titulo;
+            const tema = document.createElement("p"); tema.textContent = "Tema: " + licao.tema;
+            const conteudo = document.createElement("p"); conteudo.textContent = licao.conteudo;
+            const editar = document.createElement("button"); editar.type = "button"; editar.textContent = "Editar";
+            editar.style.marginRight = "10px";
+            editar.addEventListener("click", () => {
+                idLicaoEditando = licao.id;
+                document.getElementById("titulo").value = licao.titulo;
+                document.getElementById("tema").value = licao.tema;
+                document.getElementById("conteudo").value = licao.conteudo;
+                document.getElementById("titulo-formulario").textContent = "Editar lição";
+                botaoSalvar.textContent = "Salvar alterações";
+                botaoCancelar.hidden = false;
+                limparPrevias(); campoImagens.value = ""; campoVideo.value = "";
+                mostrarMidiasExistentes(licao.id);
+                formulario.scrollIntoView({behavior:"smooth"});
+            });
+            const excluir = document.createElement("button"); excluir.type = "button"; excluir.textContent = "Excluir";
+            excluir.addEventListener("click", async () => {
+                if (trabalhando) return;
+                trabalhando = true;
+                excluir.disabled = true;
+                try {
+                    const excluiu = await excluirLicaoComMidias(licao);
+                    if (!excluiu) { informar("Exclusão cancelada. Nenhum arquivo foi alterado."); return; }
+                    if (idLicaoEditando === licao.id) finalizarEdicao();
+                    informar("Lição e mídias vinculadas excluídas do Supabase.");
+                    await mostrarLicoes();
+                } catch (erro) {
+                    console.error("Falha na exclusão:", erro);
+                    informar(erro.message, true);
+                } finally { trabalhando = false; excluir.disabled = false; }
+            });
+            cartao.append(titulo, tema, conteudo, editar, excluir);
+            lista.appendChild(cartao);
+        }
+    } catch (erro) { console.error(erro); lista.textContent = "Erro ao carregar lições do Supabase: " + erro.message; }
+}
+formulario.addEventListener("submit", async evento => {
+    evento.preventDefault();
+    if (trabalhando) return;
+    const titulo = document.getElementById("titulo").value.trim();
+    const tema = document.getElementById("tema").value;
+    const conteudo = document.getElementById("conteudo").value.trim();
+    if (!titulo || !tema || !conteudo) { informar("Preencha todos os campos.", true); return; }
+    trabalhando = true;
+    botaoSalvar.disabled = true;
+    let licaoSalva = false;
+    try {
+        const dados = { titulo, tema, conteudo };
+        let licaoId = idLicaoEditando;
+        if (licaoId !== null) {
+            const resposta = await requisicao("/rest/v1/licoes?id=eq." + encodeURIComponent(licaoId), {
+                method: "PATCH", headers: { "Content-Type":"application/json", "Prefer":"return=representation" },
+                body: JSON.stringify(dados)
+            });
+            const atualizadas = await resposta.json();
+            if (!Array.isArray(atualizadas) || atualizadas.length !== 1) throw new Error("Não foi possível confirmar a edição.");
+        } else {
+            // A coluna id não possui identidade automática no banco existente.
+            // Mantemos o formato de IDs já utilizado, sem alterar o esquema.
+            licaoId = Date.now();
+            const resposta = await requisicao("/rest/v1/licoes", {
+                method: "POST", headers: { "Content-Type":"application/json", "Prefer":"return=representation" },
+                body: JSON.stringify({ id: licaoId, ...dados })
+            });
+            const criadas = await resposta.json();
+            if (!Array.isArray(criadas) || criadas.length !== 1) throw new Error("Não foi possível confirmar o cadastro.");
+        }
+        licaoSalva = true;
+        const quantidade = campoImagens.files.length + (campoVideo.files.length ? 1 : 0);
+        if (quantidade) await enviarArquivosDaLicao(licaoId);
+        finalizarEdicao();
+        informar("Lição salva no Supabase" + (quantidade ? " e arquivos enviados." : "."));
+        await mostrarLicoes();
+    } catch (erro) {
+        console.error(erro);
+        informar((licaoSalva ? "O texto foi salvo, mas houve erro ao enviar mídias: " : "Não foi possível salvar: ") + erro.message, true);
+        if (licaoSalva) await mostrarLicoes();
+    } finally { trabalhando = false; botaoSalvar.disabled = false; }
+});
+mostrarLicoes();
+</script>
+</body>
+</html>

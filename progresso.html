@@ -1,0 +1,161 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Meu Progresso | Paiter-Suruí</title>
+    <link rel="stylesheet" href="css/style.css">
+
+    <style>
+        .painel-progresso {
+            max-width: 1000px;
+            margin: 35px auto;
+            padding: 20px;
+        }
+
+        .resumo-progresso {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .cartao-progresso {
+            background: #FFFCF7;
+            border-top: 6px solid #632629;
+            border-radius: 15px;
+            padding: 25px;
+            text-align: center;
+        }
+
+        .cartao-progresso h2 {
+            color: #18583C;
+            font-size: 32px;
+        }
+
+        .historico-progresso {
+            background: #FFFCF7;
+            padding: 25px;
+            border-radius: 15px;
+        }
+
+        .item-historico {
+            padding: 15px;
+            margin: 12px 0;
+            background: #F5EBDD;
+            border-radius: 10px;
+        }
+
+        @media (max-width: 650px) {
+            .resumo-progresso {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <header class="cabecalho">
+        <div class="logo">PAITER-SURUÍ</div>
+
+        <nav class="menu">
+            <a href="index.html">Início</a>
+            <a href="aprender.html">Aprender</a>
+            <a href="jogar.html">Jogar</a>
+            <a href="progresso.html" class="ativo">
+                Meu Progresso
+            </a>
+        </nav>
+    </header>
+
+    <main>
+        <section class="apresentacao">
+            <h1>Meu Progresso</h1>
+            <p>Acompanhe seus resultados nos jogos.</p>
+        </section>
+
+        <section class="painel-progresso">
+
+            <div class="resumo-progresso">
+
+                <div class="cartao-progresso">
+                    <h2 id="total-partidas">0</h2>
+                    <p>Partidas realizadas</p>
+                </div>
+
+                <div class="cartao-progresso">
+                    <h2 id="total-acertos">0</h2>
+                    <p>Total de acertos</p>
+                </div>
+
+                <div class="cartao-progresso">
+                    <h2 id="aproveitamento">0%</h2>
+                    <p>Aproveitamento</p>
+                </div>
+
+            </div>
+
+            <div class="historico-progresso">
+                <h2>Histórico de partidas</h2>
+                <div id="lista-historico"></div>
+            </div>
+
+        </section>
+    </main>
+
+    <footer>
+        <p>Projeto Educativo Paiter-Suruí</p>
+    </footer>
+
+    <script>
+        const historico = JSON.parse(
+            localStorage.getItem("progressoPaiterSurui") || "[]"
+        );
+
+        const totalPartidas = historico.length;
+
+        const totalAcertos = historico.reduce(
+            (soma, partida) => soma + partida.acertos, 0
+        );
+
+        const totalQuestoes = historico.reduce(
+            (soma, partida) => soma + partida.total, 0
+        );
+
+        const percentual = totalQuestoes > 0
+            ? Math.round((totalAcertos / totalQuestoes) * 100)
+            : 0;
+
+        document.getElementById("total-partidas").textContent =
+            totalPartidas;
+
+        document.getElementById("total-acertos").textContent =
+            totalAcertos;
+
+        document.getElementById("aproveitamento").textContent =
+            percentual + "%";
+
+        const lista = document.getElementById("lista-historico");
+
+        if (historico.length === 0) {
+            lista.textContent = "Nenhuma partida realizada ainda.";
+        } else {
+            historico.slice().reverse().forEach(function(partida) {
+                const item = document.createElement("div");
+                item.className = "item-historico";
+
+                const texto = document.createElement("p");
+                texto.textContent =
+                    partida.data + " | " +
+                    partida.acertos + " de " +
+                    partida.total + " acertos";
+
+                item.appendChild(texto);
+                lista.appendChild(item);
+            });
+        }
+    </script>
+
+</body>
+</html>
