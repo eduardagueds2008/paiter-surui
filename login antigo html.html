@@ -1,0 +1,77 @@
+
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1.0">
+   <title>Login Administrativo | Jornada Paiter-Suruí</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+    <header class="cabecalho">
+        <div class="logo">PAITER-SURUÍ</div>
+        <nav class="menu">
+            <a href="index.html">Início</a>
+        </nav>
+    </header>
+
+    <main class="painel-admin">
+     
+<h1>Bem-vindo ao Paiter-Suruí</h1>
+
+<p>
+    Escolha como deseja acessar nossa plataforma educativa.
+</p>
+
+<section class="acesso-usuario">
+    <h2>Área do Usuário (Aluno)</h2>
+
+    <p>
+        Acesse as lições, conheça a cultura Paiter-Suruí
+        e participe dos jogos educativos.
+    </p>
+
+    
+<a href="inicio.html" class="botao-admin">
+    Iniciar
+</a>
+
+</section>
+
+<hr>
+
+<section class="acesso-administrador">
+    <h2>Área do Administrador</h2>
+
+    <p>
+        Acesso reservado aos responsáveis pelo
+        gerenciamento dos conteúdos educativos.
+        Informe seu usuário e senha.
+    </p>
+</section>
+
+
+        <form id="form-login">
+            <label for="usuario">Usuário</label>
+            <input type="text" id="usuario"
+                   autocomplete="username" required>
+
+            <label for="senha">Senha</label>
+            <input type="password" id="senha"
+                   autocomplete="current-password" required>
+
+            <button type="submit">
+    Entrar
+</button>
+        </form>
+    </main>
+
+    <footer>
+        <p>Projeto Educativo Paiter-Suruí</p>
+    </footer>
+<script src="js/supabase-config.js"></script>
+<script src="js/login-supabase.js"></script>
+</body>
+</html>
