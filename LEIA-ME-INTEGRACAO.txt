@@ -1,0 +1,21 @@
+JORNADA PAITER-SURUÍ | INTEGRAÇÃO VITOR + CAÇA-PALAVRAS | LABORATÓRIO
+
+O que foi integrado:
+- Visual atualizado do pacote "modificação do vitor.zip" em inicio, aprender, jogar, progresso e CSS.
+- Login.html e index.html preservados do pacote ORIGINAL index(1).zip.
+- Painel admin atualizado com link para gerenciar-caca.html e resultados-lab.html.
+- Caça-palavras: caca-palavras.html, gerenciar-caca.html e js/caca-lab.js.
+- Links de caça-palavras em inicio.html e jogar.html.
+- Arquivos de autenticação Supabase do pacote Vitor preservados; sem operações no banco.
+
+ATENÇÃO:
+- O caça-palavras salva dados apenas no localStorage do navegador. Não sincroniza entre computadores.
+- A página resultados-lab.html exibe apenas dados locais, não um relatório geral de alunos.
+- O login original usa Supabase e precisa ser testado com internet e credenciais já existentes.
+- NÃO substitua sua pasta original diretamente. Faça backup e abra esta pasta como laboratório.
+- Nenhuma alteração foi feita no site publicado nem no Supabase.
+
+TESTE: abra esta pasta no VS Code e use servidor HTTP local, acessando index.html.
+Verifique primeiro login e admin, depois aluno, lições, quiz e caça-palavras.
+Não publique antes de testar todos os fluxos.
+- A página isolada "cultura (1) - Copia.html" não foi incorporada: seus links apontavam para arquivos ausentes.

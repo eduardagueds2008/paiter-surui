@@ -1,111 +1,53 @@
-
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-   <title>Jornada Paiter-Suruí: aprenda e teste seus conhecimentos</title>
-<meta name="description" content="Explore a Jornada Paiter-Suruí, um site educacional com lições e quizzes sobre a história, cultura, tradições, território e conhecimentos do povo Paiter-Suruí.">
+    <title>Jornada Paiter-Suruí: aprenda e teste seus conhecimentos</title>
+    <meta name="description" content="Site educacional com lições e quizzes sobre a história, cultura, tradições, território e conhecimentos do povo Paiter-Suruí.">
+    <meta name="theme-color" content="#315B45">
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='8' fill='%23315B45'/%3E%3Cpath d='M16 26V12M16 17C11 17 9 14 9 9C14 9 16 12 16 17zM16 20C21 20 23 17 23 12C18 12 16 15 16 20z' fill='%23F0B93A' stroke='%23F0B93A' stroke-width='1.5' stroke-linejoin='round'/%3E%3C/svg%3E">
     <link rel="stylesheet" href="css/style.css">
-
-    <style>
-        .apresentacao, .autores {
-            max-width: 850px;
-            margin: 30px auto;
-            padding: 25px;
-            background: #f5eedf;
-            border-radius: 15px;
-            text-align: center;
-            box-sizing: border-box;
-        }
-
-        .apresentacao h1,
-        .apresentacao h2,
-        .autores h2 {
-            color: #315c37;
-        }
-
-        .apresentacao p {
-            line-height: 1.8;
-            font-size: 17px;
-        }
-
-        .opcoes {
-            text-align: center;
-            margin: 35px 15px;
-        }
-
-        .autores ul {
-            list-style: none;
-            padding: 0;
-            line-height: 2;
-        }
-
-        .autores li {
-            margin-bottom: 5px;
-        }
-    </style>
 </head>
-
 <body>
-
 <header class="cabecalho">
+    <div class="logo">PAITER-SURUÍ</div>
     <nav class="menu">
-        <a href="inicio.html">Início</a>
+        <a href="inicio.html" class="ativo">Início</a>
         <a href="aprender.html">Aprender</a>
         <a href="jogar.html">Jogar</a>
         <a href="progresso.html">Meu Progresso</a>
     </nav>
 </header>
-
 <main>
-    <section class="apresentacao">
-<h1 style="color: #ffffff; text-align: center;">Jornada Paiter-Suruí: aprenda e teste seus conhecimentos</h1>
-        <h2>Conhecer, Aprender e Preservar</h2>
-
-        <p>
-            Bem-vindo ao nosso espaço educativo!
-            Este site foi desenvolvido com o objetivo
-            de valorizar, divulgar e contribuir para
-            a preservação da história, da cultura,
-            das tradições e dos conhecimentos do
-            povo indígena Paiter-Suruí.
-        </p>
-
-        <p>
-            Por meio de lições educativas, imagens,
-            vídeos e jogos interativos, buscamos
-            proporcionar uma experiência de aprendizagem
-            que aproxima a educação e a tecnologia
-            dos saberes dos povos originários.
-        </p>
-
-        <p>
-            Explore os conteúdos, conheça mais sobre
-            a cultura Paiter-Suruí e teste seus
-            conhecimentos!
-        </p>
+    <section class="hero">
+        <h1>Jornada Paiter-Suruí</h1>
+        <p class="sub">Conhecer, Aprender e Preservar</p>
+        <p>Um espaço educativo para valorizar, divulgar e contribuir com a preservação da história, da cultura, das tradições e dos conhecimentos do povo indígena Paiter-Suruí.</p>
+        <a href="aprender.html" class="botao-inicio">Começar a aprender</a>
     </section>
 
-    <section class="opcoes">
-        <h3>Escolha uma opção:</h3>
-
-        <a href="aprender.html" class="botao-inicio">
-            Aprender
-        </a>
-
-        <a href="jogar.html" class="botao-inicio">
-            Jogar
-        </a>
-
-        <a href="progresso.html" class="botao-inicio">
-            Meu Progresso
-        </a>
+    <section class="secao">
+        <div class="cartao-texto">
+            <h2>Bem-vindo ao nosso espaço educativo</h2>
+            <p>Por meio de lições, imagens, vídeos e jogos interativos, buscamos aproximar a educação e a tecnologia dos saberes dos povos originários.</p>
+            <p>Explore os conteúdos, conheça a cultura Paiter-Suruí e teste seus conhecimentos de forma interativa.</p>
+        </div>
     </section>
+
+    <section class="secao">
+        <h2 class="titulo-secao">Escolha uma opção</h2>
+        <div class="linha-titulo"></div>
+    </section>
+    <div class="pilares">
+        <a class="pilar" href="aprender.html"><span class="icone">📖</span><h3>Aprender</h3><p>Lições sobre história, cultura, território e natureza.</p></a>
+        <a class="pilar" href="jogar.html"><span class="icone">🎯</span><h3>Jogar</h3><p>Quiz para testar o que você descobriu.</p></a>
+        <a class="pilar" href="progresso.html"><span class="icone">🌱</span><h3>Meu Progresso</h3><p>Acompanhe seus acertos e partidas.</p></a>
+        <a class="pilar" href="caca-palavras.html"><span class="icone">🔤</span><h3>Caça-palavras</h3><p>Encontre palavras relacionadas às lições.</p></a>
+    </div>
 
     <section class="autores">
         <h2>Autores do Projeto</h2>
-
         <ul>
             <li>Mª Eduarda Guedes</li>
             <li>Fernanda Kauanny Guedes</li>
@@ -114,10 +56,9 @@
             <li>João Vitor Nazaré</li>
             <li>Williana Thais de Souza</li>
         </ul>
-
         <p>Projeto Educacional Paiter-Suruí</p>
     </section>
 </main>
-
+<footer><p>Projeto Educativo Paiter-Suruí · Grupo de Experiência Aplicada</p></footer>
 </body>
 </html>

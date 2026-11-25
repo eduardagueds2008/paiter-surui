@@ -5,67 +5,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jogar | Paiter-Suruí</title>
+    <meta name="theme-color" content="#315B45">
     <link rel="stylesheet" href="css/style.css">
-
-    <style>
-        .area-jogo {
-            max-width: 750px;
-            margin: 40px auto;
-            padding: 25px;
-            background: #FFFCF7;
-            border-radius: 18px;
-            text-align: center;
-        }
-
-        .area-jogo h2 {
-            color: #632629;
-        }
-
-        .alternativa-jogo {
-            display: block;
-            width: 100%;
-            margin: 12px 0;
-            padding: 15px;
-            border: 2px solid #632629;
-            border-radius: 12px;
-            background: #F5EBDD;
-            color: #4B2D25;
-            font-size: 17px;
-            cursor: pointer;
-        }
-
-        .alternativa-jogo:hover {
-            background: #EAD8C7;
-        }
-
-        .alternativa-jogo:disabled {
-            cursor: default;
-        }
-
-        #proxima-pergunta {
-            display: none;
-            margin-top: 20px;
-        }
-
-        #resultado-jogo {
-            font-weight: bold;
-            margin-top: 20px;
-        }
-    </style>
 </head>
 
 <body>
 
     <header class="cabecalho">
-        <div class="logo">PAITER-SURUÍ</div>
-
-        <nav class="menu">
-            <a href="index.html">Início</a>
-            <a href="aprender.html">Aprender</a>
-            <a href="jogar.html" class="ativo">Jogar</a>
-            <a href="progresso.html">Meu Progresso</a>
-        </nav>
-    </header>
+    <div class="logo">PAITER-SURUÍ</div>
+    <nav class="menu">
+        <a href="inicio.html">Início</a>
+        <a href="aprender.html">Aprender</a>
+        <a href="jogar.html" class="ativo">Jogar</a>
+        <a href="progresso.html">Meu Progresso</a>
+        <a href="caca-palavras.html">Caça-palavras</a>
+    </nav>
+</header>
 
     <main>
         <section class="apresentacao">
@@ -75,14 +30,13 @@
 
         <section class="area-jogo">
 
-<div id="selecao-licao-jogo" style="margin-bottom: 25px;">
+<div id="selecao-licao-jogo" style="margin-bottom:22px;text-align:left">
     <label for="licao-jogo">
         <strong>Escolha uma lição para jogar:</strong>
     </label>
 
     <select
         id="licao-jogo"
-        style="display: block; width: 100%; padding: 12px; margin-top: 10px; border-radius: 10px;"
     >
         <option value="">Todas as lições</option>
     </select>
